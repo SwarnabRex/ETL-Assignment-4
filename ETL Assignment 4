@@ -1,0 +1,152 @@
+# Data Quality and Validation in ETL
+
+Given Dataset: Sales_Transactions
+
+| Txn_ID | Customer_ID | Customer_Name | Product_ID | Quantity | Txn_Amount | Txn_Date   | City      |
+|--------|------------|---------------|------------|----------|------------|------------|----------|
+| 201 | C101 | Rahul Mehta | P11 | 2 | 4000 | 2025-12-01 | Mumbai |
+| 202 | C102 | Anjali Rao  | P12 | 1 | 1500 | 2025-12-01 | Bengaluru |
+| 203 | C101 | Rahul Mehta | P11 | 2 | 4000 | 2025-12-01 | Mumbai |
+| 204 | C103 | Suresh Iyer | P13 | 3 | 6000 | 2025-12-02 | Chennai |
+| 205 | C104 | Neha Singh  | P14 | Null | 2500 | 2025-12-02 | Delhi |
+| 206 | C105 | N/A         | P15 | 1 | Null | 2025-12-03 | Pune |
+| 207 | C106 | Amit Verma  | P16 | 1 | 1800 | Null | Pune |
+| 208 | C101 | Rahul Mehta | P11 | 2 | 4000 | 2025-12-01 | Mumbai |
+
+---
+
+## Question 1: Define Data Quality in the context of ETL pipelines. Why is it more than just data cleaning?
+
+Data Quality in ETL ensures that data is accurate, complete, consistent, valid, and reliable throughout extraction, transformation, and loading.
+
+It is more than just data cleaning because:
+- It includes validation and monitoring.
+- It enforces business rules.
+- It ensures correctness before loading into the target system.
+- It maintains quality across the entire pipeline.
+
+---
+
+## Question 2: Explain why poor data quality leads to misleading dashboards and incorrect decisions.
+
+- Incorrect data produces wrong calculations.
+- Dashboards show inaccurate trends.
+- Business decisions become unreliable.
+- Financial and strategic risks increase.
+- Trust in analytics decreases.
+
+If input data is wrong, output insights will also be wrong.
+
+---
+
+## Question 3: What is duplicate data? Explain three causes in ETL pipelines.
+
+Duplicate data refers to repeated records representing the same real-world transaction or entity.
+
+Three causes:
+1. Data from multiple sources being loaded without deduplication.
+2. Re-running ETL jobs without proper checks.
+3. Missing primary key or unique constraints.
+
+Example in dataset:
+(C101, P11, 2025-12-01, 4000) appears three times (Txn_ID 201, 203, 208).
+
+---
+
+## Question 4: Differentiate between exact, partial, and fuzzy duplicates.
+
+Exact Duplicates:
+- All fields are identical.
+
+Partial Duplicates:
+- Key fields match but some other fields differ.
+
+Fuzzy Duplicates:
+- Records are similar but not identical (e.g., spelling differences).
+
+Example:
+"Rahul Mehta" and "Rahul M." may be fuzzy duplicates.
+
+---
+
+## Question 5: Why should data validation be performed during transformation rather than after loading?
+
+- Prevents invalid data from entering the target system.
+- Reduces correction effort later.
+- Maintains database integrity.
+- Ensures business rules are applied early.
+
+Validating after loading may allow incorrect data to affect reports.
+
+---
+
+## Question 6: Explain how business rules help in validating data accuracy. Give an example.
+
+Business rules define conditions data must satisfy.
+
+They help by:
+- Ensuring logical consistency.
+- Preventing invalid entries.
+- Enforcing domain constraints.
+
+Examples from dataset:
+- Quantity should not be Null (Row 205 violates).
+- Txn_Amount should not be Null (Row 206 violates).
+- Txn_Date should not be Null (Row 207 violates).
+- Customer_Name should not be "N/A".
+
+---
+
+## Question 7: Write an SQL query on Sales_Transactions to list all duplicate keys and their counts using the business key (Customer_ID + Product_ID + Txn_Date + Txn_Amount).
+
+SQL Query:
+
+SELECT 
+    Customer_ID,
+    Product_ID,
+    Txn_Date,
+    Txn_Amount,
+    COUNT(*) AS duplicate_count
+FROM Sales_Transactions
+GROUP BY 
+    Customer_ID,
+    Product_ID,
+    Txn_Date,
+    Txn_Amount
+HAVING COUNT(*) > 1;
+
+This query groups records by the business key and returns combinations that appear more than once.
+
+Duplicate combination:
+(C101, P11, 2025-12-01, 4000) appears 3 times.
+
+---
+
+## Question 8: Enforcing Referential Integrity
+
+Customers_Master Table:
+
+| CustomerID | CustomerName | City       |
+|------------|-------------|-----------|
+| C101 | Rahul Mehta | Mumbai |
+| C102 | Anjali Rao  | Bengaluru |
+| C103 | Suresh Iyer | Chennai |
+| C104 | Neha Singh  | Delhi |
+
+Customer_ID values in Sales_Transactions:
+C101, C102, C103, C104, C105, C106
+
+Customer_ID values not present in Customers_Master:
+C105, C106
+
+SQL Query to detect violations:
+
+SELECT DISTINCT s.Customer_ID
+FROM Sales_Transactions s
+LEFT JOIN Customers_Master c
+ON s.Customer_ID = c.CustomerID
+WHERE c.CustomerID IS NULL;
+
+This query identifies Customer_ID values in Sales_Transactions that do not exist in Customers_Master.
+
+---
